@@ -2,6 +2,9 @@ import yaml
 import sys
 import schedule
 import time
+import validators
+import requests
+import re
 
 CONST_INVOKE = "::invoke"
 CONST_PRINT = "::print"
@@ -9,14 +12,56 @@ CONST_DAYS = {'0': 'sunday', '1': 'monday', '2': 'tuesday', '3': 'wednesday', '4
 cmd = ""
 is_scheduled = False
 
-def executeStep(step):
-    print("to code")
+def executeStep(step, inputs):
+    try:
+        print("\nExecuting step\n")
+        print(step)
+        if step['type'] == 'HTTP_CLIENT' and step['method'] == 'GET':
+            # it is a GET request
+            if validators.url(step['outbound_url']):
+                # URL is given in the step itself
+                url = step['outbound_url']
+            elif 'outbound_url' in inputs and step['outbound_url'].startswith('::input'):
+                # URL was passed through inputs when the step was <<invoked>>
+                url = inputs['outbound_url']
+            else:
+                print("Error, improper URL format or no URL provided")
+                return
+            
+            r = requests.get(url)
+            print("\nMAKING REQUEST TO : " + url + " RESPONSE = " + str(r.status_code))
+
+            # check if any condition checks are present in the step
+            if 'condition' in step:
+                if step['condition']['if']['equal']['left'] == 'http.response.code' and step['condition']['if']['equal']['right'] == r.status_code:
+                    if step['condition']['then']['action'].startswith('::invoke'):
+                        input = {}
+                        step_id = int(re.sub('\D', '', step['condition']['then']['action']))
+                        if 'data' in step['condition']['then']:
+                            input['outbound_url'] = step['condition']['then']['data']
+                        executeStep(contents['Steps'][step_id - 1][step_id], input)
+
+                    elif step['condition']['then']['action'].startswith('::print'):
+                        if step['condition']['then']['data'].split('.')[-1] in r.headers:
+                            print(r.headers[step['condition']['then']['data'].split('.')[-1]])
+                        else:
+                            print("Requested field not available in the header")
+                    else:
+                        print("Unknown action, only print and invoke are currently supported")
+                else:
+                    print(step['condition']['else']['data'])
+    except KeyError:
+        print("Key not found, check the input YAML file structure")
+            
 
 def job():
-    print("job started")
-    print("\n")
-    print(contents)
-    print("\n")
+    print("\njob started")
+    try:
+        for step_id in contents['Scheduler']['step_id_to_execute']:
+            # Passing the dictionary of the whole step to be executed
+            executeStep(contents['Steps'][step_id - 1][step_id], {})
+    except KeyError:
+        print("Key not found, check the input YAML file structure")
 
 def weekDayJob():
     #Setting minutely execution for a particular day
@@ -44,7 +89,8 @@ with open(str(sys.argv[1]), 'r') as stream:
             if hour == "*":
                 if minute == "*":
                     # -- * * * --     (not valid)
-                    print("all stars, invalid")
+                    print("all stars, invalid, using this case for testing the logic")
+                    job()
                 
                 elif int(minute) >= 0 and int(minute) <= 59:
                     # -- 5 * * --     (run every 5 minutes)

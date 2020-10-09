@@ -34,4 +34,4 @@ Steps:
    
 Scheduler:
   when: "2 * *"
-  step_id_to_execute: [ 1 ]
+  step_id_to_execute: [ 1 , 2]

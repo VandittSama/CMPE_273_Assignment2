@@ -16,5 +16,5 @@ Steps:
           data: "Error"
     
 Scheduler:
-  when: "52 0 4 "
+  when: "1 * * "
   step_id_to_execute: [ 1 ]

@@ -14,6 +14,7 @@ schedule = "==0.6.0"
 urllib3 = "==1.25.10"
 pyyaml = "*"
 python-crontab = "*"
+validators = "*"
 
 [requires]
 python_version = "3.8"
