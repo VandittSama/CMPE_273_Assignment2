@@ -89,6 +89,7 @@ with open(str(sys.argv[1]), 'r') as stream:
                 if minute == "*":
                     # -- * * * --     (not valid)
                     print("Invalid Schedule --> * * *")
+                    #job()
                 
                 elif int(minute) >= 0 and int(minute) <= 59:
                     # -- 5 * * --     (run every 5 minutes)
