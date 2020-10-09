@@ -14,8 +14,8 @@ is_scheduled = False
 
 def executeStep(step, inputs):
     try:
-        print("\nExecuting step\n")
-        print(step)
+        #print("\nExecuting step\n")
+        #print(step)
         if step['type'] == 'HTTP_CLIENT' and step['method'] == 'GET':
             # it is a GET request
             if validators.url(step['outbound_url']):
@@ -29,7 +29,7 @@ def executeStep(step, inputs):
                 return
             
             r = requests.get(url)
-            print("\nMAKING REQUEST TO : " + url + " RESPONSE = " + str(r.status_code))
+            #print("\nMAKING REQUEST TO : " + url + " RESPONSE = " + str(r.status_code))
 
             # check if any condition checks are present in the step
             if 'condition' in step:
@@ -55,7 +55,6 @@ def executeStep(step, inputs):
             
 
 def job():
-    print("\njob started")
     try:
         for step_id in contents['Scheduler']['step_id_to_execute']:
             # Passing the dictionary of the whole step to be executed
@@ -89,25 +88,24 @@ with open(str(sys.argv[1]), 'r') as stream:
             if hour == "*":
                 if minute == "*":
                     # -- * * * --     (not valid)
-                    print("all stars, invalid, using this case for testing the logic")
-                    job()
+                    print("Invalid Schedule --> * * *")
                 
                 elif int(minute) >= 0 and int(minute) <= 59:
                     # -- 5 * * --     (run every 5 minutes)
-                    print("only minute provided")
+                    # print("only minute provided")
                     schedule.every(int(minute)).minutes.do(job)
                     is_scheduled = True
 
             elif int(hour) >= 0 and int(hour) <= 23:
                 if minute == "*":
                     # -- * 2 * --     (run everyday at 2:00)
-                    print("only hour provided")
+                    #print("only hour provided")
                     schedule.every().day.at("%d:00"%int(hour)).do(job)
                     is_scheduled = True
 
                 elif int(minute) >= 0 and int(minute) <= 59:
                     # -- 5 1 * --     (run (everyday) at 1:05)
-                    print("minute and hour provided")
+                    #print("minute and hour provided")
                     schedule.every().day.at("%d:%d"%(int(hour),int(minute))).do(job)
                     is_scheduled = True
 
@@ -115,32 +113,30 @@ with open(str(sys.argv[1]), 'r') as stream:
             if hour == "*":
                 if minute == "*":
                     # -- * * 3 -- (run every wednesday at 00:00)
-                    print("only day provided")
+                    #print("only day provided")
                     cmd = "schedule.every()." + CONST_DAYS[day] + ".at(\"00:00\").do(job)"
                     is_scheduled = True
 
                 elif int(minute) >= 0 and int(minute) <= 59:
                     # -- 5 * 2 -- (run every 5 minutes on every tuesday -- not mentioned)
-                    print("minute and day provided")
+                    #print("minute and day provided")
                     cmd = "schedule.every()." + CONST_DAYS[day] + ".at(\"00:00\").do(weekDayJob)"
                     is_scheduled = True
 
             elif int(hour) >= 0 and int(hour) <= 23:
                 if minute == "*":
                     # -- * 15 4 --    (run every thursday at 15:00 -- not mentioned)
-                    print("hour and day provided")
+                    #print("hour and day provided")
                     cmd = "schedule.every()." + CONST_DAYS[day] + ".at(\"" + hour + ":00\").do(job)"
                     is_scheduled = True
 
                 elif int(minute) >= 0 and int(minute) <= 59:
                     # -- 10 23 1 --       (run every monday at 23:10)
-                    print("everything provided")
+                    #print("Hour, minute and day provided")
                     cmd = "schedule.every()." + CONST_DAYS[day] + ".at(\"" + hour + ":" + minute + "\").do(job)"
                     is_scheduled = True
 
-        # schedule.every(5).seconds.do(job)
         if is_scheduled is True and cmd:
-            #print(cmd)
             exec(cmd)
         while is_scheduled is True:
             schedule.run_pending()
