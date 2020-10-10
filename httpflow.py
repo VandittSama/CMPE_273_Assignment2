@@ -28,7 +28,10 @@ def executeStep(step, inputs):
                 print("Error, improper URL format or no URL provided")
                 return
             
-            r = requests.get(url)
+            try:
+                r= requests.get(url)
+            except requests.exceptions.RequestException:
+                raise SystemExit("Invalid URL request, Job will quit")
             #print("\nMAKING REQUEST TO : " + url + " RESPONSE = " + str(r.status_code))
 
             # check if any condition checks are present in the step
